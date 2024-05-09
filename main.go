@@ -9,60 +9,78 @@ import (
 )
 
 func main() {
-	k6Req, k6Resp, err := readCDPFile("newtab2-cdp-k6.log")
+	// Check if we have the right number of arguments
+	if len(os.Args) != 3 {
+		fmt.Println("Usage: <program> <filename1> <filename2>")
+		os.Exit(1)
+	}
+
+	// Extract filenames from command line arguments
+	filenameA := os.Args[1]
+	filenameB := os.Args[2]
+
+	fmt.Printf("Processing files: %s and %s\n", filenameA, filenameB)
+
+	compare(filenameA, filenameB)
+}
+
+func compare(filenameA, filenameB string) {
+	fmt.Printf("A is %q and B is %q\n", filenameA, filenameB)
+
+	k6Req, k6Resp, err := readCDPFile(filenameA)
 	if err != nil {
-		fmt.Printf("\nError reading k6 file:", err)
+		fmt.Printf("\nError reading file A:", err)
 		return
 	}
 
 	k6UnmatchedReq, k6UnmatchedResp, k6NoIDResponses := linkRequestResponse(k6Req, k6Resp)
-	fmt.Printf("\nk6 requests with no matching response:\n\n")
+	fmt.Printf("\nA requests with no matching response:\n\n")
 	for _, r := range k6UnmatchedReq {
 		fmt.Println(r)
 	}
-	fmt.Printf("\nk6 responses with no matching request:\n\n")
+	fmt.Printf("\nA responses with no matching request:\n\n")
 	for _, r := range k6UnmatchedResp {
 		fmt.Println(r)
 	}
-	fmt.Printf("\nThere are %d No ID k6 responses\n", len(k6NoIDResponses))
+	fmt.Printf("\nThere are %d No ID A responses\n", len(k6NoIDResponses))
 
-	pwReq, pwResp, err := readCDPFile("newtab2-cdp-pw.log")
+	pwReq, pwResp, err := readCDPFile(filenameB)
 	if err != nil {
-		fmt.Println("Error reading pw file:", err)
+		fmt.Println("Error reading B file:", err)
 		return
 	}
 
 	pwUnmatchedReq, pwUnmatchedResp, pwNoIDResponses := linkRequestResponse(pwReq, pwResp)
-	fmt.Printf("\nPW requests with no matching response:\n\n")
+	fmt.Printf("\nB requests with no matching response:\n\n")
 	for _, r := range pwUnmatchedReq {
 		fmt.Println(r)
 	}
-	fmt.Printf("\nPW responses with no matching request:\n\n")
+	fmt.Printf("\nB responses with no matching request:\n\n")
 	for _, r := range pwUnmatchedResp {
 		fmt.Println(r)
 	}
-	fmt.Printf("There are %d No ID pw responses\n", len(pwNoIDResponses))
+	fmt.Printf("There are %d No ID B responses\n", len(pwNoIDResponses))
 
 	ink6NotInPw := filterRequests(k6Req, pwReq)
-	fmt.Printf("\nRequests in k6 but not in pw:\n")
+	fmt.Printf("\nRequests in A but not in B:\n")
 	for _, r := range ink6NotInPw {
 		fmt.Println(r)
 	}
 
 	inPwNotInK6 := filterRequests(pwReq, k6Req)
-	fmt.Printf("\nRequests in pw but not in k6:\n")
+	fmt.Printf("\nRequests in B but not in A:\n")
 	for _, r := range inPwNotInK6 {
 		fmt.Println(r)
 	}
 
 	respInk6NotInPw := filterResponses(k6Resp, pwResp)
-	fmt.Printf("\nResponses in k6 but not in pw:\n")
+	fmt.Printf("\nResponses in A but not in B:\n")
 	for _, r := range respInk6NotInPw {
 		fmt.Println(r)
 	}
 
 	respInPwNotInK6 := filterResponses(pwResp, k6Resp)
-	fmt.Printf("\nResponses in pw but not in k6:\n")
+	fmt.Printf("\nResponses in B but not in A:\n")
 	for _, r := range respInPwNotInK6 {
 		fmt.Println(r)
 	}
